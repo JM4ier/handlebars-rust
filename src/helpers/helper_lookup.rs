@@ -28,7 +28,14 @@ impl HelperDef for LookupHelper {
 
         let value = match *collection_value.value() {
             Json::Array(ref v) => index.value().as_u64().and_then(|u| v.get(u as usize)),
-            Json::Object(ref m) => index.value().as_str().and_then(|k| m.get(k)),
+            Json::Object(ref m) => {
+                match index.value() {
+                    serde_json::Value::String(ref s) => m.get(s),
+                    serde_json::Value::Number(n) => m.get(&n.to_string()),
+                    serde_json::Value::Bool(b) => m.get(&b.to_string()),
+                    _ => None,
+                }
+            },
             _ => None,
         };
         if r.strict_mode() && value.is_none() {
